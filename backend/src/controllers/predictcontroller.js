@@ -6,6 +6,8 @@ dotenv.config();
 export const runPrediction = async (req, res) => {
     const userId = 'YZMM';
     const features = ['workload', 'stress', 'hrv'];
+    const RISK_THRESHOLD = 0.7;
+    const DEBOUNCE_HOURS = 3;
 
     try {
         const { data: featureData, error: featureError } = await supabase
@@ -63,6 +65,51 @@ export const runPrediction = async (req, res) => {
             ]);
 
         if (insertError) throw insertError;
+
+        // Commented out the noti function since it will throw error without fcm token and need front end to request fcm token
+
+        // // Get user's FCM token and last_notified_at
+        // const { data: userData, error: userError } = await supabase
+        //     .from('users')
+        //     .select('fcm_token, last_notified_at')
+        //     .eq('id', userId)
+        //     .single();
+        // if (userError) throw userError;
+
+        // if (userData && userData.fcm_token) {
+        //     fcmToken = userData.fcm_token;
+        // } else {
+        //     fcmToken = undefined;
+        // }
+
+        // let lastNotified;
+        // if (userData && userData.last_notified_at) {
+        // lastNotified = new Date(userData.last_notified_at);
+        // } else {
+        // lastNotified = new Date(0); // default value
+        // }
+        // const hoursSince = (Date.now() - lastNotified.getTime()) / (1000 * 60 * 60);
+
+        // // Send notification if threshold met and debounce passed
+        // if (fcmToken && p_next_hour >= RISK_THRESHOLD && hoursSince >= DEBOUNCE_HOURS) {
+        //     await admin.messaging().send({
+        //     token: fcmToken,
+        //     notification: {
+        //         title: '! Migraine Risk Alert',
+        //         body: `Next-hour migraine risk: ${(p_next_hour * 100).toFixed(0)}%`
+        //     }
+        // });
+
+        // // Update last_notified_at in DB
+        // await supabase
+        //     .from('users')
+        //     .update({ last_notified_at: new Date().toISOString() })
+        //     .eq('id', userId);
+
+        // console.log('Notification sent and timestamp updated');
+        // } else {
+        // console.log('No notification (below threshold or debounce active)');
+        // }
         
         res.json({
             user_id: userId,
