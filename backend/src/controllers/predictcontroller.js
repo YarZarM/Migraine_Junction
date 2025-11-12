@@ -40,11 +40,16 @@ export const runPrediction = async (req, res) => {
         if (!process.env.ML_URL) {
         // Mock ML response
         console.log("ML_URL not set, using mock prediction");
+        const randomDirection = () => Math.random() < 0.5 ? 'risk_up' : 'risk_down';
         mlResponse = {
             data: {
-            p_next_hour: Math.random().toFixed(2), // dummy prediction
-            top_factors: ['stress', 'workload'],
-            timestamp: new Date().toISOString()
+                p_next_hour: Math.random().toFixed(2), // dummy prediction
+                top_factors: [
+                    { feature: 'stress', importance: Math.random().toFixed(2), direction: randomDirection() },
+                    { feature: 'workload', importance: Math.random().toFixed(2), direction: randomDirection() },
+                    { feature: 'hrv', importance: Math.random().toFixed(2), direction: randomDirection() }
+                ],
+                timestamp: new Date().toISOString()
             }
         };
         } else {
