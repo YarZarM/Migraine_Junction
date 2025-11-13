@@ -73,33 +73,19 @@ export const runPrediction = async (req, res) => {
 
         const data_series = featureData.reverse();
 
+        const windowData = featureData.map(item => {
+            return {
+                workload_0_10: item.workload,
+                stress_0_10: item.stress,
+                hrv_rmssd_ms: item.hrv
+            };
+        })
+
         const mlPayload = {
-            user_id: userId,
-            window_size: 24,
-            features: features,
-            series: data_series
+            window: windowData
         }
 
-        let mlResponse;
-
-        if (!process.env.ML_URL) {
-        // Mock ML response
-        console.log("ML_URL not set, using mock prediction");
-        const randomDirection = () => Math.random() < 0.5 ? 'risk_up' : 'risk_down';
-        mlResponse = {
-            data: {
-                p_next_hour: Math.random().toFixed(2), // dummy prediction
-                top_factors: [
-                    { feature: 'stress', importance: Math.random().toFixed(2), direction: randomDirection() },
-                    { feature: 'workload', importance: Math.random().toFixed(2), direction: randomDirection() },
-                    { feature: 'hrv', importance: Math.random().toFixed(2), direction: randomDirection() }
-                ],
-                timestamp: new Date().toISOString()
-            }
-        };
-        } else {
-            mlResponse = await axios.post(process.env.ML_URL, mlPayload);
-        }
+        const mlResponse = await axios.post(process.env.ML_URL, mlPayload);
 
         const {p_next_hour, top_factors, timestamp} = mlResponse.data;
 
