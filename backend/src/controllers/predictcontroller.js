@@ -81,10 +81,10 @@ export const runPrediction = async (req, res) => {
             };
         })
 
-        windowData.timestamp = Date.now();
 
         const mlPayload = {
-            window: windowData
+            window: windowData,
+            timestamp: Date.now()
         }
 
         const mlResponse = await axios.post(process.env.ML_URL, mlPayload);
