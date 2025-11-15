@@ -51,8 +51,8 @@ const getRecommendedActions = (top_factors) => {
 export const runPrediction = async (req, res) => {
     const userId = 'YZMM';
     const features = ['workload', 'stress', 'hrv'];
-    const RISK_THRESHOLD = 0.7;
-    const DEBOUNCE_HOURS = 3;
+    const RISK_THRESHOLD = 0.1;
+    const DEBOUNCE_HOURS = 0;
 
     try {
         const { data: featureData, error: featureError } = await supabase
@@ -118,27 +118,34 @@ export const runPrediction = async (req, res) => {
 
         // Send notification if threshold met and debounce passed
         if (expoPushToken && p_next_hour >= RISK_THRESHOLD && hoursSince >= DEBOUNCE_HOURS) {
-            await fetch("https://exp.host/--/api/v2/push/send", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    to: expoPushToken,
-                    sound: "default",
-                    title: "⚠️ Migraine Risk Alert",
-                    body: `Next-hour risk: ${(p_next_hour * 100).toFixed(0)}%`
-    })
+            console.log('Sending Expo push to token:', expoPushToken);
+
+            const expoRes = await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            to: expoPushToken,
+            sound: 'default',
+            title: '⚠️ Migraine Risk Alert',
+            body: `Next-hour risk: ${(p_next_hour * 100).toFixed(0)}%`
+            }),
         });
 
-        // Update last_notified_at in DB
+    const expoResBody = await expoRes.json();
+    console.log('Expo push response:', expoRes.status, expoResBody);
+
+    if (expoRes.ok && Array.isArray(expoResBody.data) && expoResBody.data[0]?.status === 'ok') {
         await supabase
-            .from('users')
-            .update({ last_notified_at: new Date().toISOString() })
-            .eq('id', userId);
+        .from('users')
+        .update({ last_notified_at: new Date().toISOString() })
+        .eq('id', userId);
 
         console.log('Notification sent and timestamp updated');
-        } else {
-        console.log('No notification (below threshold or debounce active)');
-        }
+    } else {
+        console.warn('Expo push failed:', expoResBody);
+    }
+    }
+
         
         res.json({
             user_id: userId,

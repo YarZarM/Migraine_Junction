@@ -9,17 +9,22 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hps2025.migraineapp"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+        },
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hps2025.migraineapp"
+    },
+    "notification": {
+      "androidMode": "default",
+      "androidCollapsedTitle": "My App"
     },
     "web": {
       "output": "static",
@@ -38,11 +43,23 @@
             "backgroundColor": "#000000"
           }
         }
+      ], 
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png"
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "98decf00-8468-4ad1-bcf4-11857c6e5d52"
+      }
+    },
+    "owner": "hps2025"
   }
 }

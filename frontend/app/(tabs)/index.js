@@ -8,9 +8,46 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
   RefreshControl,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import * as Notifications from "expo-notifications";
+import { setupNotificationListeners } from "../notifications/onNotification"
+import { registerForPushNotifications } from "../notifications/registerPush";
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  // Ask for permission
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== "granted") {
+    console.log("Failed to get push token for push notification!");
+    return;
+  }
+
+  // Get the Expo push token
+  token = (await Notifications.getExpoPushTokenAsync()).data;
+  console.log("Expo push token:", token);
+
+  // (Optional) Android notification channel
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+    });
+  }
+
+  return token;
+}
+
 
 export default function App() {
   const [data, setData] = useState(null);
@@ -28,7 +65,7 @@ export default function App() {
       if (isRefresh) setRefreshing(true);
       setLoading(true);
 
-      const res = await fetch("https://migraine-junction.onrender.com/api/v1/latest");
+      const res = await fetch("http://172.20.10.3:5000/api/v1/latest");
 
       const contentType = res.headers.get("content-type");
       if (contentType?.includes("application/json")) {
@@ -55,7 +92,43 @@ export default function App() {
   };
 
   useEffect(() => {
+    // This will run once when the app mounts
+    registerForPushNotifications();
+  }, []);
+
+  useEffect(() => {
+    setupNotificationListeners();
+  }, []);
+
+  useEffect(() => {
+    // 1) Get latest migraine data (your existing API)
     fetchData(false);
+
+    // 2) Register for push notifications and send token to backend
+    const setupPush = async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (!token) return;
+
+        // ⚠️ IMPORTANT: do NOT use "https://localhost" on a real device
+        // Replace with your actual server IP / domain, e.g.:
+        // http://192.168.1.5:5000 or your ngrok URL
+        await fetch("http://172.20.10.3:5000/api/v1/register-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            expoPushToken: token,
+            // Add whatever else you need: userId, device info, etc.
+          }),
+        });
+      } catch (err) {
+        console.error("Error sending push token to backend:", err);
+      }
+    };
+
+    setupPush();
   }, []);
 
   // Derived values
